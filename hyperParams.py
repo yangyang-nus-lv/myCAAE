@@ -10,7 +10,7 @@ NUM_ENCODER_CHANNELS = 64 # First encoder conv layer output channel
 
 NUM_GEN_CHANNELS = 2 ** (NUM_CONV_LAYERS + np.log2(NUM_ENCODER_CHANNELS) - 1) 
                     # = 1024 First generator convT layer input channel
-NUM_FC_CHANNELS = NUM_GEN_CHANNELS * SIZE_MINI_MAP ** 2   
+NUM_FC_CHANNELS = int(NUM_GEN_CHANNELS * SIZE_MINI_MAP ** 2)
                     # = 1024 * 4 * 4 First generator fc layer output size
 
 LENGTH_Z = 50

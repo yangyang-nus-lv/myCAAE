@@ -87,7 +87,7 @@ class Generator(nn.Module):
 
         z = self.relu(self.fc(z))
         # rshape to 1024 * 4 * 4
-        z = x.view(-1, 1024, hp.SIZE_MINI_MAP, hp.SIZE_MINI_MAP)
+        z = z.view(-1, 1024, hp.SIZE_MINI_MAP, hp.SIZE_MINI_MAP)
         # convT
         z = self.relu(self.convT_1(z))
         z = self.relu(self.convT_2(z))

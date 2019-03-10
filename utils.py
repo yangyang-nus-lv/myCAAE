@@ -123,7 +123,7 @@ def default_train_results_dir():
     return os.path.join('.', 'trained_models', datetime.datetime.now().strftime(fmt), datetime.datetime.now().strftime(fmt_t))
 
 
-def default_where_to_save(eval=True):
+def default_save_path(eval=True):
     path_str = os.path.join('.', 'results', datetime.datetime.now().strftime(fmt), datetime.datetime.now().strftime(fmt_t))
     if not os.path.exists(path_str):
         os.makedirs(path_str)
@@ -157,7 +157,6 @@ class LossTracker(object):
         self.train_losses.append(train_loss)
         self.valid_losses.append(valid_loss)
         self.tv_losses.append(tv_loss)
-        self.uni_losses.append(uni_loss)
         self.paths.append(path)
         self.epochs += 1
         if self.use_heuristics and self.epochs >= 2:
