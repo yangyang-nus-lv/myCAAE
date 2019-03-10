@@ -115,7 +115,6 @@ if __name__ == '__main__':
             os.remove(log_path)
         logging.basicConfig(filename=log_path, level=logging.DEBUG)
 
-
         net.train(
             utkface_path=data_src,
             batch_size=args.batch_size,
