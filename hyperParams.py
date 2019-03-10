@@ -25,9 +25,9 @@ LENGTH_L = NUM_AGES + NUM_GENDERS_EXPANDED
 # loss function
 WEIGHT = {
     'eg': 1,
-    'tv': 0.05,
-    'ez': 0.0001,
-    'gd': 0.0001,
+    'tv': 0.1,
+    'ez': 0.001,
+    'gd': 0.001,
 }
 
 MALE = 0
