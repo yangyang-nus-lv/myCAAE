@@ -29,6 +29,7 @@ class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
         self.relu = nn.LeakyReLU()
+        self.tanh = nn.Tanh()
         # conv = nn.Conv2d(in_channel, out_channel, kernel_size=2, stride=1, padding=0, groups=1, bias=True)
         self.conv_1 = nn.Conv2d(3, 64, 5, 2, 2)
         self.conv_2 = nn.Conv2d(64, 128, 5, 2, 2)
@@ -48,7 +49,7 @@ class Encoder(nn.Module):
         # fc layer
         x = self.fc(x)
 
-        return F.tanh(x)
+        return self.tanh(x)
 
 class Generator(nn.Module):
     """
