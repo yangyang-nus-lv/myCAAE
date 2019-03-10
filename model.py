@@ -222,6 +222,7 @@ class CAAE(object):
 
         input_output_loss = nn.L1Loss()
         criterion = nn.BCEWithLogitsLoss()
+        mse_loss = nn.MSELoss()
 
         nrow = round((2 * batch_size)**0.5)
 
@@ -264,8 +265,8 @@ class CAAE(object):
 
                     # total variation to smooth the generated image
                     tv_loss = (
-                        nn.MSELoss(generated[:, :, :, :-1], generated[:, :, :, 1:]) +\
-                        nn.MSELoss(generated[:, :, :-1, :], generated[:, :, 1:, :])
+                        mse_loss(generated[:, :, :, :-1], generated[:, :, :, 1:]) +\
+                        mse_loss(generated[:, :, :-1, :], generated[:, :, 1:, :])
                     ) / batch_size
                     tv_loss.to(self.device)
                     losses['tv'].append(tv_loss.item())
