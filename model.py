@@ -195,6 +195,12 @@ class CAAE(object):
 
         self.device = None
 
+    def __call__(self, *args, **kwargs):
+        self.test_single(*args, **kwargs)
+
+    def __repr__(self):
+        return os.linesep.join([repr(subnet) for subnet in (self.E, self.Dz, self.G)])
+        
     def train(
             self,
             utkface_path,
