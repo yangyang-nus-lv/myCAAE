@@ -136,6 +136,8 @@ def default_test_results_dir(eval=True):
 def print_timestamp(s):
     print("[{}] {}".format(datetime.datetime.now().strftime(fmt_t.replace('_', ':')), s))
 
+def save_image_normalized(*args, **kwargs):
+    save_image(*args, **kwargs, normalize=True, range=(-1, 1), padding=4)
 # LOSS
 
 class LossTracker(object):

@@ -76,7 +76,6 @@ if __name__ == '__main__':
     # test params
     parser.add_argument('--age', '-a', required=False, type=int)
     parser.add_argument('--gender', '-g', required=False, type=str_to_gender)
-    parser.add_argument('--watermark', '-w', action='store_true')
 
     # shared params
     parser.add_argument('--cpu', '-c', action='store_true', help='Run on CPU even if CUDA is available.')
@@ -146,5 +145,4 @@ if __name__ == '__main__':
             age=args.age,
             gender=args.gender,
             target=results_dest,
-            watermark=args.watermark
         )

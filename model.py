@@ -266,7 +266,7 @@ class CAAE(object):
                     tv_loss = (
                         nn.MSELoss(generated[:, :, :, :-1], generated[:, :, :, 1:]) +\
                         nn.MSELoss(generated[:, :, :-1, :], generated[:, :, 1:, :])
-                    ) / float(generated.size(0)) / batch_size
+                    ) / batch_size
                     tv_loss.to(self.device)
                     losses['tv'].append(tv_loss.item())
 
