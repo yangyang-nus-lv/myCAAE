@@ -26,8 +26,8 @@ LENGTH_L = NUM_AGES + NUM_GENDERS_EXPANDED
 WEIGHT = {
     'eg': 1,
     'tv': 0.001,
-    'ez': 0.01,
-    'gd': 0.01,
+    'ez': 0.005,
+    'gd': 0.005,
 }
 
 MALE = 0
