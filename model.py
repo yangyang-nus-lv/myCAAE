@@ -28,7 +28,7 @@ class Encoder(nn.Module):
 
     def __init__(self):
         super(Encoder, self).__init__()
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         # conv = nn.Conv2d(in_channel, out_channel, kernel_size=2, stride=1, padding=0, groups=1, bias=True)
         self.conv_1 = nn.Conv2d(3, 64, 5, 2, 2)
@@ -66,7 +66,7 @@ class Generator(nn.Module):
     """
     def __init__(self):
         super(Generator, self).__init__()
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
         # fc
         self.fc = nn.Linear(hp.LENGTH_Z + hp.LENGTH_L, hp.NUM_FC_CHANNELS)
         # convTranspose layer
@@ -111,7 +111,7 @@ class DiscriminatorZ(nn.Module):
     """
     def __init__(self):
         super(DiscriminatorZ, self).__init__()
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
         self.fc_1 = nn.Linear(hp.LENGTH_Z, hp.NUM_ENCODER_CHANNELS)
         self.fc_2 = nn.Linear(hp.NUM_ENCODER_CHANNELS, hp.NUM_ENCODER_CHANNELS // 2)
         self.fc_3 = nn.Linear(hp.NUM_ENCODER_CHANNELS // 2, hp.NUM_ENCODER_CHANNELS // 4)
@@ -138,7 +138,7 @@ class DiscriminatorImg(nn.Module):
     """
     def __init__(self):
         super(DiscriminatorImg, self).__init__()
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
         self.conv_1 = nn.Sequential(
             nn.Conv2d(3, 16, 2, 2),
             nn.BatchNorm2d(16),
@@ -288,7 +288,7 @@ class CAAE(object):
                     losses['dz'].append(dz_loss_tot.item())
 
                     # Encoder\DiscriminatorZ Loss
-                    ez_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
+                    ez_loss = loss_weight['ez'] * criterion(d_z_logits, torch.ones_like(d_z_logits))
                     ez_loss.to(self.device)
                     losses['ez'].append(ez_loss.item())
 
@@ -302,7 +302,7 @@ class CAAE(object):
                     losses['di'].append(di_loss_tot.item())
 
                     # Generator\DiscriminatorImg Loss
-                    gd_loss = criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
+                    gd_loss = loss_weight['gd'] * criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
                     losses['gd'].append(gd_loss.item())
                     # ************************************* loss functions end *******************************************************
 
@@ -310,7 +310,7 @@ class CAAE(object):
 
                     # Back prop on Encoder\Generator
                     self.eg_optimizer.zero_grad()
-                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ez_loss + loss_weight['gd'] * gd_loss
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + ez_loss + gd_loss
                     loss.backward(retain_graph=True)
                     self.eg_optimizer.step()
 
