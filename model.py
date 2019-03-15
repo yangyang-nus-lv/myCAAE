@@ -273,12 +273,12 @@ class CAAE(object):
                     tv_loss = (
                         mse_loss(generated[:, :, :, :-1], generated[:, :, :, 1:]) +\
                         mse_loss(generated[:, :, :-1, :], generated[:, :, 1:, :])
-                    ) / batch_size
+                    )
                     tv_loss.to(self.device)
                     losses['tv'].append(tv_loss.item())
 
                     # DiscriminatorZ Loss
-                    z_prior = (torch.rand_like(z, device=self.device) - 0.5) / 2 # [-1 : 1]
+                    z_prior = (torch.rand_like(z, device=self.device) - 0.5) * 2 # [-1 : 1]
                     d_z_prior_logits = self.Dz(z_prior)
                     d_z_logits = self.Dz(z)
 
@@ -288,7 +288,7 @@ class CAAE(object):
                     losses['dz'].append(dz_loss_tot.item())
 
                     # Encoder\DiscriminatorZ Loss
-                    ez_loss = loss_weight['ez'] * criterion(d_z_logits, torch.ones_like(d_z_logits))
+                    ez_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
                     ez_loss.to(self.device)
                     losses['ez'].append(ez_loss.item())
 
@@ -302,7 +302,7 @@ class CAAE(object):
                     losses['di'].append(di_loss_tot.item())
 
                     # Generator\DiscriminatorImg Loss
-                    gd_loss = loss_weight['gd'] * criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
+                    gd_loss = criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
                     losses['gd'].append(gd_loss.item())
                     # ************************************* loss functions end *******************************************************
 
@@ -310,7 +310,7 @@ class CAAE(object):
 
                     # Back prop on Encoder\Generator
                     self.eg_optimizer.zero_grad()
-                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + ez_loss + gd_loss
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ez_loss + loss_weight['gd'] * gd_loss
                     loss.backward(retain_graph=True)
                     self.eg_optimizer.step()
 
