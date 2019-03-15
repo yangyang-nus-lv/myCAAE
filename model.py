@@ -210,7 +210,6 @@ class CAAE(object):
             lr=2e-4,
             should_plot=False,
             betas=(0.9, 0.999),
-            loss_weight = hp.WEIGHT,
             valid_size=None,
             save_path=None,
             models_saving='always',):
@@ -255,6 +254,8 @@ class CAAE(object):
                 # ************************************* loss functions *******************************************************
                 losses = defaultdict(lambda: [])
                 self.training_mode()  # move to train mode
+
+                loss_weight = hp.loss_weights(epoch)
                 for i, (images, labels) in enumerate(train_loader, 1):
 
                     images = images.to(device=self.device)

@@ -23,12 +23,31 @@ LENGTH_LABEL = NUM_AGES + NUM_GENDERS
 LENGTH_L = NUM_AGES + NUM_GENDERS_EXPANDED
 
 # loss function
-WEIGHT = {
-    'eg': 1,
-    'tv': 0.0001,
-    'ez': 0.0005,
-    'gd': 0.0005,
-}
+def loss_weights(epoch):
+    if 1 <= epoch < 21:
+        WEIGHT = {  'eg': 1,
+                    'tv': 0.01 - 0.009 / 20 * epoch,
+                    'ez': 0.001 + 0.004 / 20 * epoch,
+                    'gd': 0.001 + 0.004 / 20 * epoch, }
+        return WEIGHT
+    elif 21 <= epoch < 71:
+        WEIGHT = {  'eg': 1,
+                    'tv': 0.001,
+                    'ez': 0.005 + 0.002 / 50 * epoch,
+                    'gd': 0.005 + 0.005 / 50 * epoch, }
+        return WEIGHT
+    elif 71 <= epoch < 121:
+        WEIGHT = {  'eg': 1,
+                    'tv': 0.001,
+                    'ez': 0.007,
+                    'gd': 0.01, }
+        return WEIGHT
+    else:
+        WEIGHT = {  'eg': 1,
+                    'tv': 0.001,
+                    'ez': 0.007 - 0.007 / 30 * epoch,
+                    'gd': 0.01 - 0.01 / 30 * epoch, }
+        return WEIGHT
 
 MALE = 0
 FEMALE = 1
