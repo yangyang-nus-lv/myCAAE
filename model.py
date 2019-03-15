@@ -28,7 +28,7 @@ class Encoder(nn.Module):
 
     def __init__(self):
         super(Encoder, self).__init__()
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
         self.tanh = nn.Tanh()
         # conv = nn.Conv2d(in_channel, out_channel, kernel_size=2, stride=1, padding=0, groups=1, bias=True)
         self.conv_1 = nn.Conv2d(3, 64, 5, 2, 2)
@@ -66,7 +66,7 @@ class Generator(nn.Module):
     """
     def __init__(self):
         super(Generator, self).__init__()
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
         # fc
         self.fc = nn.Linear(hp.LENGTH_Z + hp.LENGTH_L, hp.NUM_FC_CHANNELS)
         # convTranspose layer
@@ -111,7 +111,7 @@ class DiscriminatorZ(nn.Module):
     """
     def __init__(self):
         super(DiscriminatorZ, self).__init__()
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
         self.fc_1 = nn.Linear(hp.LENGTH_Z, hp.NUM_ENCODER_CHANNELS)
         self.fc_2 = nn.Linear(hp.NUM_ENCODER_CHANNELS, hp.NUM_ENCODER_CHANNELS // 2)
         self.fc_3 = nn.Linear(hp.NUM_ENCODER_CHANNELS // 2, hp.NUM_ENCODER_CHANNELS // 4)
@@ -138,7 +138,7 @@ class DiscriminatorImg(nn.Module):
     """
     def __init__(self):
         super(DiscriminatorImg, self).__init__()
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
         self.conv_1 = nn.Sequential(
             nn.Conv2d(3, 16, 2, 2),
             nn.BatchNorm2d(16),
