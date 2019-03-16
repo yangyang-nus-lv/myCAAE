@@ -33,8 +33,8 @@ def loss_weights(epoch):
     elif 21 <= epoch < 71:
         WEIGHT = {  'eg': 1,
                     'tv': 0.001 - 0.001 / 50 * (epoch - 20),
-                    'ez': 0.001 + 0.004 / 50 * (epoch - 20),
-                    'gd': 0.001 + 0.006 / 50 * (epoch - 20), }
+                    'ez': 0 + 0.005 / 50 * (epoch - 20),
+                    'gd': 0 + 0.007 / 50 * (epoch - 20), }
         return WEIGHT
     elif 71 <= epoch < 121:
         WEIGHT = {  'eg': 1,
