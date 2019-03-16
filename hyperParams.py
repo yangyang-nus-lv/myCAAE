@@ -24,29 +24,17 @@ LENGTH_L = NUM_AGES + NUM_GENDERS_EXPANDED
 
 # loss function
 def loss_weights(epoch):
-    if 1 <= epoch < 21:
+    if 1 <= epoch < 101:
         WEIGHT = {  'eg': 1,
-                    'tv': 0.001,
-                    'ez': 0,
-                    'gd': 0, }
-        return WEIGHT
-    elif 21 <= epoch < 71:
-        WEIGHT = {  'eg': 1,
-                    'tv': 0.001 - 0.001 / 50 * (epoch - 20),
-                    'ez': 0 + 0.005 / 50 * (epoch - 20),
-                    'gd': 0 + 0.007 / 50 * (epoch - 20), }
-        return WEIGHT
-    elif 71 <= epoch < 121:
-        WEIGHT = {  'eg': 1,
-                    'tv': 0,
-                    'ez': 0.005,
-                    'gd': 0.007 - 0.002 / 50 * (epoch - 70), }
+                    'tv': 0.001 - 0.001 / 100 * epoch,
+                    'ez': 0 + 0.001 / 100 * epoch,
+                    'gd': 0 + 0.001 / 100 * epoch, }
         return WEIGHT
     else:
         WEIGHT = {  'eg': 1,
-                    'tv': 0 + 0.001 / 70 * (epoch - 120),
-                    'ez': 0.005 - 0.005 / 70 * (epoch - 120),
-                    'gd': 0.005 - 0.005 / 70 * (epoch - 120), }
+                    'tv': 0 + 0.0001 / 100 * (epoch - 100),
+                    'ez': 0.001 - 0.001 / 100 * (epoch - 100),
+                    'gd': 0.001 - 0.001 / 100 * (epoch - 100), }
         return WEIGHT
 
 MALE = 0

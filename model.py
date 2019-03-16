@@ -274,7 +274,7 @@ class CAAE(object):
                     tv_loss = loss_weight['tv'] * (
                         mse_loss(generated[:, :, :, :-1], generated[:, :, :, 1:]) +\
                         mse_loss(generated[:, :, :-1, :], generated[:, :, 1:, :])
-                    ) / batch_size
+                    )
                     tv_loss.to(self.device)
                     losses['tv'].append(tv_loss.item())
 
