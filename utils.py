@@ -34,6 +34,22 @@ def str_to_tensor(text, normalize=False):
     result = torch.cat((age_tensor, gender_tensor), 0)
     return result
 
+def idx_to_class_info(idx):
+    """
+    input: age label index
+    output: age and gender
+    """
+    if idx % 2 == 0:
+        gender = 0
+    else:
+        gender = 1
+    age_class = idx // 2
+    if age_class < 4:
+        age = age_class * 5 + 2
+    else:
+        age = (age_class - 3) * 10 + 15
+    return age, gender
+
 class Label(namedtuple('Label', ('age', 'gender'))):
     """
     get label
