@@ -204,8 +204,8 @@ class CAAE(object):
     def train(
             self,
             utkface_path,
-            batch_size=64,
-            epochs=1,
+            batch_size=128,
+            epochs=128,
             weight_decay=1e-5,
             lr=2e-4,
             should_plot=False,
@@ -343,21 +343,31 @@ class CAAE(object):
                     for ii, (images, labels) in enumerate(valid_loader, 1):
                         images = images.to(self.device)
                         labels = torch.stack([str_to_tensor(idx_to_class[l], normalize=True) for l in list(labels.numpy())])
-                        labels = labels.to(self.device)
                         validate_labels = labels.to(self.device)
+
+                        for i in range(10):
+                            test_images = images[8 * i, :, :, :]
+                            tested = self.test_single(test_images, age, gender, target, save_test=False)
+                            test_joined = torch.cat(test_joined, tested, 0)
+                            if i == 0:
+                                test_joined = tested.clone()
+                            else:
+                                test_joined = torch.cat(test_joined, tested, 0)
+
+                        test_file_name = os.path.join(save_path_epoch, 'test.png')
+                        save_image_normalized(tensor=test_joined, filename=test_file_name, nrow=nrow)
 
                         z = self.E(images)
                         z_l = torch.cat((z, validate_labels), 1)
                         generated = self.G(z_l)
 
-                        loss = input_output_loss(images, generated)
+                        validate_loss = input_output_loss(images, generated)
 
-                        joined = merge_images(images, generated)  # torch.cat((generated, images), 0)
-
+                        joined = merge_images(images, generated)  
                         file_name = os.path.join(save_path_epoch, 'validation.png')
                         save_image_normalized(tensor=joined, filename=file_name, nrow=nrow)
 
-                        losses['valid'].append(loss.item())
+                        losses['valid'].append(validate_loss.item())
                         break
 
 
@@ -380,12 +390,12 @@ class CAAE(object):
             cp_path = self.save(save_path_epoch, to_save_models=True)
         loss_tracker.plot()
     
-    def test_single(self, image_tensor, age, gender, target):
+    def test_single(self, image_tensor, age, gender, target, save_test=True):
         """
             test single image
         """
         self.eval()
-        batch = image_tensor.repeat(hp.NUM_AGES, 1, 1, 1).to(device=self.device)  # N x D x H x W
+        batch = image_tensor.repeat(hp.NUM_AGES, 1, 1, 1).to(device=self.device)  # N x C x H x W
         z = self.E(batch)  # N x Z
 
         gender_tensor = -torch.ones(hp.NUM_GENDERS)
@@ -408,11 +418,13 @@ class CAAE(object):
             for elem_idx in (0, 1, 2, 3, -4, -3, -2, -1):
                 joined[img_idx, :, elem_idx, :] = 1  # color border white
                 joined[img_idx, :, :, elem_idx] = 1  # color border white
-
-        dest = os.path.join(target, 'menifa.png')
-        save_image_normalized(tensor=joined, filename=dest, nrow=joined.size(0))
-        print_timestamp("Saved test result to " + dest)
-        return dest
+        if save_test:
+            dest = os.path.join(target, 'menifa.png')
+            save_image_normalized(tensor=joined, filename=dest, nrow=joined.size(0))
+            print_timestamp("Saved test result to " + dest)
+            return dest
+        else:
+            return joined
     
     def _mass_fn(self, fn_name, *args, **kwargs):
         """Apply a function to all possible Net's components.
