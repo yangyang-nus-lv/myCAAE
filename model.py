@@ -111,7 +111,7 @@ class DiscriminatorZ(nn.Module):
     """
     def __init__(self):
         super(DiscriminatorZ, self).__init__()
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
         self.fc_1 = nn.Linear(hp.LENGTH_Z, hp.NUM_ENCODER_CHANNELS)
         self.fc_2 = nn.Linear(hp.NUM_ENCODER_CHANNELS, hp.NUM_ENCODER_CHANNELS // 2)
         self.fc_3 = nn.Linear(hp.NUM_ENCODER_CHANNELS // 2, hp.NUM_ENCODER_CHANNELS // 4)
@@ -138,7 +138,7 @@ class DiscriminatorImg(nn.Module):
     """
     def __init__(self):
         super(DiscriminatorImg, self).__init__()
-        self.relu = nn.ReLU()
+        self.relu = nn.LeakyReLU()
         self.conv_1 = nn.Sequential(
             nn.Conv2d(3, 16, 2, 2),
             nn.BatchNorm2d(16),
@@ -267,11 +267,11 @@ class CAAE(object):
                     # loss function of encoder + generator
                     z_l = torch.cat((z, labels), 1)
                     generated = self.G(z_l)
-                    eg_loss = loss_weight['eg'] * input_output_loss(generated, images) 
+                    eg_loss = input_output_loss(generated, images) 
                     losses['eg'].append(eg_loss.item())
 
                     # total variation to smooth the generated image
-                    tv_loss = loss_weight['tv'] * (
+                    tv_loss = (
                         mse_loss(generated[:, :, :, :-1], generated[:, :, :, 1:]) +\
                         mse_loss(generated[:, :, :-1, :], generated[:, :, 1:, :])
                     )
@@ -289,7 +289,7 @@ class CAAE(object):
                     losses['dz'].append(dz_loss_tot.item())
 
                     # Encoder\DiscriminatorZ Loss
-                    ez_loss = loss_weight['ez'] * criterion(d_z_logits, torch.ones_like(d_z_logits))
+                    ez_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
                     ez_loss.to(self.device)
                     losses['ez'].append(ez_loss.item())
 
@@ -303,7 +303,7 @@ class CAAE(object):
                     losses['di'].append(di_loss_tot.item())
 
                     # Generator\DiscriminatorImg Loss
-                    gd_loss = loss_weight['gd'] * criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
+                    gd_loss = criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
                     losses['gd'].append(gd_loss.item())
                     # ************************************* loss functions end *******************************************************
 
@@ -311,7 +311,7 @@ class CAAE(object):
 
                     # Back prop on Encoder\Generator
                     self.eg_optimizer.zero_grad()
-                    loss = eg_loss + tv_loss + ez_loss + gd_loss
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ez_loss + loss_weight['gd'] * gd_loss
                     loss.backward(retain_graph=True)
                     self.eg_optimizer.step()
 
@@ -340,33 +340,32 @@ class CAAE(object):
                 with torch.no_grad():  # validation
                     self.eval()  # move to eval mode
 
-                    for ii, (images, labels) in enumerate(valid_loader, 1):
-                        images = images.to(self.device)
-                        validate_labels = torch.stack([str_to_tensor(idx_to_class[l], normalize=True) for l in list(labels.numpy())])
+                    for val_images, val_labels in valid_loader:
+                        val_images = val_images.to(self.device)
+                        validate_labels = torch.stack([str_to_tensor(idx_to_class[l], normalize=True) for l in list(val_labels.numpy())])
                         validate_labels = validate_labels.to(self.device)
-                        
+
+                        z = self.E(val_images)
+                        z_l = torch.cat((z, validate_labels), 1)
+                        generated = self.G(z_l)
+
+                        validate_loss = input_output_loss(val_images, generated)
+
+                        joined = merge_images(val_images, generated)  
+                        file_name = os.path.join(save_path_epoch, 'validation.png')
+                        save_image_normalized(tensor=joined, filename=file_name, nrow=nrow)
+                        # test first 10 valid images
                         for i in range(10):
-                            test_image = images[8 * i, :, :, :]
-                            test_label = labels[8 * i]
+                            test_image = val_images[i, :, :, :]
+                            test_label = val_labels[i]
                             age, gender = idx_to_class_info(test_label)
                             tested = self.test_single(test_image, age, gender, target=None, save_test=False)
                             if i == 0:
                                 test_joined = tested.clone().detach()
                             else:
                                 test_joined = torch.cat((test_joined, tested), 0)
-
                         test_file_name = os.path.join(save_path_epoch, 'test.png')
                         save_image_normalized(tensor=test_joined, filename=test_file_name, nrow=11)
-
-                        z = self.E(images)
-                        z_l = torch.cat((z, validate_labels), 1)
-                        generated = self.G(z_l)
-
-                        validate_loss = input_output_loss(images, generated)
-
-                        joined = merge_images(images, generated)  
-                        file_name = os.path.join(save_path_epoch, 'validation.png')
-                        save_image_normalized(tensor=joined, filename=file_name, nrow=nrow)
 
                         losses['valid'].append(validate_loss.item())
                         break
