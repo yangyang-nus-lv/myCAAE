@@ -349,9 +349,8 @@ class CAAE(object):
                             test_label = labels[8 * i]
                             age, gender = idx_to_class_info(labels[8 * i])
                             tested = self.test_single(test_image, age, gender, target=None, save_test=False)
-                            test_joined = torch.cat(test_joined, tested, 0)
                             if i == 0:
-                                test_joined = tested.clone()
+                                test_joined = tested.clone().detach()
                             else:
                                 test_joined = torch.cat(test_joined, tested, 0)
 
