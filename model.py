@@ -342,8 +342,9 @@ class CAAE(object):
 
                     for ii, (images, labels) in enumerate(valid_loader, 1):
                         images = images.to(self.device)
-                        validate_labels = torch.stack([str_to_tensor(idx_to_class[l], normalize=True) for l in list(labels.numpy())]).to(self.device)
-
+                        validate_labels = torch.stack([str_to_tensor(idx_to_class[l], normalize=True) for l in list(labels.numpy())])
+                        validate_labels = validate_labels.to(self.device)
+                        
                         for i in range(10):
                             test_image = images[8 * i, :, :, :]
                             test_label = labels[8 * i]
@@ -355,7 +356,7 @@ class CAAE(object):
                                 test_joined = torch.cat((test_joined, tested), 0)
 
                         test_file_name = os.path.join(save_path_epoch, 'test.png')
-                        save_image_normalized(tensor=test_joined, filename=test_file_name, nrow=10)
+                        save_image_normalized(tensor=test_joined, filename=test_file_name, nrow=11)
 
                         z = self.E(images)
                         z_l = torch.cat((z, validate_labels), 1)
