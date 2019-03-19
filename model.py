@@ -347,15 +347,15 @@ class CAAE(object):
                         for i in range(10):
                             test_image = images[8 * i, :, :, :]
                             test_label = labels[8 * i]
-                            age, gender = idx_to_class_info(labels[8 * i])
+                            age, gender = idx_to_class_info(test_label)
                             tested = self.test_single(test_image, age, gender, target=None, save_test=False)
                             if i == 0:
                                 test_joined = tested.clone().detach()
                             else:
-                                test_joined = torch.cat(test_joined, tested, 0)
+                                test_joined = torch.cat((test_joined, tested), 0)
 
                         test_file_name = os.path.join(save_path_epoch, 'test.png')
-                        save_image_normalized(tensor=test_joined, filename=test_file_name, nrow=nrow)
+                        save_image_normalized(tensor=test_joined, filename=test_file_name, nrow=10)
 
                         z = self.E(images)
                         z_l = torch.cat((z, validate_labels), 1)
