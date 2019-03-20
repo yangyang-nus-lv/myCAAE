@@ -1,6 +1,13 @@
 import numpy as np
 import re
 
+BATCH_SIZE = 128
+NUM_EPOCHS = 128
+WEIGHT_DECAY = 1e-5
+LR=2e-4
+BETAS = (0.9, 0.999)
+
+
 SIZE_IMAGE = 128
 SIZE_KERNEL = 5
 NUM_CONV_LAYERS = int(np.log2(SIZE_IMAGE)) - SIZE_KERNEL // 2       # = 5

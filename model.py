@@ -28,7 +28,7 @@ class Encoder(nn.Module):
 
     def __init__(self):
         super(Encoder, self).__init__()
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         # conv = nn.Conv2d(in_channel, out_channel, kernel_size=2, stride=1, padding=0, groups=1, bias=True)
         self.conv_1 = nn.Conv2d(3, 64, 5, 2, 2)
@@ -66,7 +66,7 @@ class Generator(nn.Module):
     """
     def __init__(self):
         super(Generator, self).__init__()
-        self.relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
         # fc
         self.fc = nn.Linear(hp.LENGTH_Z + hp.LENGTH_L, hp.NUM_FC_CHANNELS)
         # convTranspose layer
