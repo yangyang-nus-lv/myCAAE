@@ -290,12 +290,14 @@ class CAAE(object):
                     dz_loss_prior = criterion(d_z_prior_logits, torch.ones_like(d_z_prior_logits))
                     dz_loss_z = criterion(d_z_logits, torch.zeros_like(d_z_logits))
                     dz_loss_tot = (dz_loss_z + dz_loss_prior)
+                    losses['dz_r'].append(dz_loss_prior.item())
+                    losses['dz_f'].append(dz_loss_z.item())
                     losses['dz'].append(dz_loss_tot.item())
 
                     # Encoder\DiscriminatorZ Loss
                     ez_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
                     ez_loss.to(self.device)
-                    losses['ez'].append(ez_loss.item())
+                    losses['ed'].append(ez_loss.item())
 
                     # DiscriminatorImg Loss
                     d_i_input_logits = self.Dimg(images, labels, self.device)
@@ -304,6 +306,8 @@ class CAAE(object):
                     di_input_loss = criterion(d_i_input_logits, torch.ones_like(d_i_input_logits))
                     di_output_loss = criterion(d_i_output_logits, torch.zeros_like(d_i_output_logits))
                     di_loss_tot = (di_input_loss + di_output_loss)
+                    losses['di_r'].append(di_input_loss.item())
+                    losses['di_f'].append(di_output_loss.item())
                     losses['di'].append(di_loss_tot.item())
 
                     # Generator\DiscriminatorImg Loss
