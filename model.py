@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 from torch.utils.data import DataLoader
+from torch.autograd import grad
 
 import logging
 import random
@@ -230,7 +231,7 @@ class CAAE(object):
         idx_to_class = {v: k for k, v in dataset.class_to_idx.items()}
 
         input_output_loss = nn.L1Loss()
-        criterion = nn.BCEWithLogitsLoss()
+        # criterion = nn.BCEWithLogitsLoss()
         mse_loss = nn.MSELoss()
 
         nrow = round((2 * batch_size)**0.5)
@@ -287,31 +288,88 @@ class CAAE(object):
                     d_z_prior_logits = self.Dz(z_prior)
                     d_z_logits = self.Dz(z)
 
-                    dz_loss_prior = criterion(d_z_prior_logits, torch.ones_like(d_z_prior_logits))
-                    dz_loss_z = criterion(d_z_logits, torch.zeros_like(d_z_logits))
-                    dz_loss_tot = (dz_loss_z + dz_loss_prior)
+                    dz_loss_prior = - d_z_prior_logits.mean()
+                    dz_loss_z = d_z_logits.mean()
+                    ########### DiscriminatorZ gradient penalty ##############
+                    # Calculate interpolation
+                    alpha_z = torch.rand(batch_size, 1, device=self.device)
+                    alpha_z = alpha_z.expand_as(z_prior)
+                    z_inter = alpha_z * z_prior.detach() + (1 - alpha_z) * z.detach()
+                    z_inter.requires_grad = True
+
+                    # Calculate probability of interpolated examples
+                    prob_z_inter = self.Dz(z_inter)
+
+                    # Calculate gradients of probabilities with respect to examples
+                    dz_gradients = grad(outputs=prob_z_inter, inputs=z_inter,
+                                        grad_outputs=torch.ones(prob_z_inter.size(), device=self.device),
+                                        create_graph=True, retain_graph=True)[0]
+
+                    # Gradients have shape (batch_size, z_length),
+                    # so flatten to easily take norm per example in batch
+                    # dz_gradients = dz_gradients.view(self.batch_size, -1)
+                    losses['dz_gn'].append(dz_gradients.norm(2, dim=1).mean().item())
+
+                    # Derivatives of the gradient close to 0 can cause problems because of
+                    # the square root, so manually calculate norm and add epsilon
+                    dz_gradients_norm = torch.sqrt(torch.sum(dz_gradients ** 2, dim=1) + 1e-12)
+
+                    # Return gradient penalty
+                    dz_gp = loss_weight['dz_gp'] * ((dz_gradients_norm - 1) ** 2).mean()
+                    ##########################################################
+                    dz_loss_tot = dz_loss_z + dz_loss_prior + dz_gp
                     losses['dz_r'].append(dz_loss_prior.item())
                     losses['dz_f'].append(dz_loss_z.item())
+                    losses['dz_gp'].append(dz_gp.item())
                     losses['dz'].append(dz_loss_tot.item())
 
                     # Encoder\DiscriminatorZ Loss
-                    ez_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
-                    ez_loss.to(self.device)
+                    ez_loss = - d_z_logits.mean()
                     losses['ed'].append(ez_loss.item())
 
                     # DiscriminatorImg Loss
                     d_i_input_logits = self.Dimg(images, labels, self.device)
                     d_i_output_logits = self.Dimg(generated, labels, self.device)
 
-                    di_input_loss = criterion(d_i_input_logits, torch.ones_like(d_i_input_logits))
-                    di_output_loss = criterion(d_i_output_logits, torch.zeros_like(d_i_output_logits))
-                    di_loss_tot = (di_input_loss + di_output_loss)
+                    di_input_loss = - d_i_input_logits.mean()
+                    di_output_loss = d_i_output_logits.mean()
+                    ################# DiscriminatorImg gradient penalty ###############################
+                    # di_gp = self._di_gradient_penalty(images, generated, labels)
+                    # Calculate interpolation
+                    alpha_i = torch.rand(batch_size, 1, 1, 1, device=self.device)
+                    alpha_i = alpha_i.expand_as(images)
+                    interpolated = alpha_i * images.detach() + (1 - alpha_i) * generated_images.detach()
+                    interpolated.requires_grad = True
+
+                    # Calculate probability of interpolated examples
+                    prob_interpolated = self.Dimg(interpolated, labels, self.device)
+
+                    # Calculate gradients of probabilities with respect to examples
+                    di_gradients = grad(outputs=prob_interpolated, inputs=interpolated,
+                                        grad_outputs=torch.ones(prob_interpolated.size(), device=self.device),
+                                        create_graph=True, retain_graph=True)[0]
+
+                    # Gradients have shape (batch_size, num_channels, img_width, img_height),
+                    # so flatten to easily take norm per example in batch
+                    di_gradients = di_gradients.view(batch_size, -1)
+                    losses['di_gn'].append(di_gradients.norm(2, dim=1).mean().item())
+
+                    # Derivatives of the gradient close to 0 can cause problems because of
+                    # the square root, so manually calculate norm and add epsilon
+                    di_gradients_norm = torch.sqrt(torch.sum(di_gradients ** 2, dim=1) + 1e-12)
+
+                    # Return gradient penalty
+                    di_gp = loss_weight['di_gp'] * ((di_gradients_norm - 1) ** 2).mean()    
+                    ###################################################################################
+                    di_loss_tot = di_input_loss + di_output_loss + di_gp
+                    
                     losses['di_r'].append(di_input_loss.item())
                     losses['di_f'].append(di_output_loss.item())
+                    losses['di_gp'].append(di_gp.item())
                     losses['di'].append(di_loss_tot.item())
 
                     # Generator\DiscriminatorImg Loss
-                    gd_loss = criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
+                    gd_loss = - d_i_output_logits.mean()
                     losses['gd'].append(gd_loss.item())
                     # ************************************* loss functions end *******************************************************
 
@@ -397,7 +455,7 @@ class CAAE(object):
         if models_saving == 'last':
             cp_path = self.save(save_path_epoch, to_save_models=True)
         loss_tracker.plot()
-    
+        
     def test_single(self, image_tensor, age, gender, target, save_test=True):
         """
             test single image
