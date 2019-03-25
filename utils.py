@@ -209,7 +209,9 @@ class LossTracker(object):
     def plot(self):
         print("in plot")
         plt.clf()
+        plt.fu
         graphs = [plt.plot(loss, label=name)[0] for name, loss in self.losses.items()]
+        plt.ylim((-1, 4))
         plt.legend(handles=graphs)
         plt.xlabel('Epochs')
         plt.ylabel('Averaged loss')
@@ -225,7 +227,7 @@ class LossTracker(object):
 
     @staticmethod
     def save(path):
-        plt.savefig(path, transparent=True)
+        plt.savefig(path, transparent=True, dpi=366)
 
     def __repr__(self):
         ret = {}
