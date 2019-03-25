@@ -268,7 +268,7 @@ class CAAE(object):
                     labels = labels.to(device=self.device)
                     # print ("DEBUG: iteration: "+str(i)+" images shape: "+str(images.shape))
                     z = self.E(images)
-
+                    
                     # loss function of encoder + generator
                     z_l = torch.cat((z, labels), 1)
                     generated = self.G(z_l)
@@ -290,9 +290,10 @@ class CAAE(object):
 
                     dz_loss_prior = - d_z_prior_logits.mean()
                     dz_loss_z = d_z_logits.mean()
-                    ########### DiscriminatorZ gradient penalty ##############
+                    ######################## DiscriminatorZ gradient penalty ##########################
                     # Calculate interpolation
-                    alpha_z = torch.rand(batch_size, 1, device=self.device)
+                    alpha_z = torch.rand(z.shape[0], 1, device=self.device)
+
                     # alpha_z = alpha_z.expand_as(z)
                     z_inter = alpha_z * z_prior.detach() + (1 - alpha_z) * z.detach()
                     z_inter.requires_grad = True
@@ -316,7 +317,7 @@ class CAAE(object):
 
                     # Return gradient penalty
                     dz_gp = loss_weight['dz_gp'] * ((dz_gradients_norm - 1) ** 2).mean()
-                    ##########################################################
+                    ##################################################################################
                     dz_loss_tot = dz_loss_z + dz_loss_prior + dz_gp
                     losses['dz_r'].append(dz_loss_prior.item())
                     losses['dz_f'].append(dz_loss_z.item())
@@ -336,7 +337,7 @@ class CAAE(object):
                     ################# DiscriminatorImg gradient penalty ###############################
                     # di_gp = self._di_gradient_penalty(images, generated, labels)
                     # Calculate interpolation
-                    alpha_i = torch.rand(batch_size, 1, 1, 1, device=self.device)
+                    alpha_i = torch.rand(images.shape[0], 1, 1, 1, device=self.device)
                     # alpha_i = alpha_i.expand_as(images)
                     interpolated = alpha_i * images.detach() + (1 - alpha_i) * generated.detach()
                     interpolated.requires_grad = True
