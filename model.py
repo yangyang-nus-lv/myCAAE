@@ -115,11 +115,11 @@ class DiscriminatorZ(nn.Module):
         super(DiscriminatorZ, self).__init__()
         self.relu = nn.LeakyReLU()
         self.fc_1 = nn.Sequential(nn.Linear(hp.LENGTH_Z, hp.NUM_ENCODER_CHANNELS), 
-                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS))
+                                nn.LayerNorm(hp.NUM_ENCODER_CHANNELS))
         self.fc_2 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS, hp.NUM_ENCODER_CHANNELS // 2),
-                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 2))
+                                nn.LayerNorm(hp.NUM_ENCODER_CHANNELS // 2))
         self.fc_3 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS // 2, hp.NUM_ENCODER_CHANNELS // 4),
-                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 4))
+                                nn.LayerNorm(hp.NUM_ENCODER_CHANNELS // 4))
         self.fc_4 = nn.Linear(hp.NUM_ENCODER_CHANNELS // 4, 1)
 
     def forward(self, z):
@@ -146,22 +146,22 @@ class DiscriminatorImg(nn.Module):
         self.relu = nn.LeakyReLU()
         self.conv_1 = nn.Sequential(
             nn.Conv2d(3, 16, 2, 2),
-            nn.BatchNorm2d(16),
+            nn.LayerNorm(16),
             self.relu   # should add () ???
         )
         self.conv_2 = nn.Sequential(
             nn.Conv2d(16 + hp.LENGTH_L, 32, 2, 2),
-            nn.BatchNorm2d(32),
+            nn.LayerNorm(32),
             self.relu   
         )
         self.conv_3 = nn.Sequential(
             nn.Conv2d(32, 64, 2, 2),
-            nn.BatchNorm2d(64),
+            nn.LayerNorm(64),
             self.relu   
         )
         self.conv_4 = nn.Sequential(
             nn.Conv2d(64, 128, 2, 2),
-            nn.BatchNorm2d(128),
+            nn.LayerNorm(128),
             self.relu   
         )
         self.fc_1 = nn.Linear(128 * 8 * 8, 1024)
