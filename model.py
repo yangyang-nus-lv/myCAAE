@@ -231,7 +231,7 @@ class CAAE(object):
         idx_to_class = {v: k for k, v in dataset.class_to_idx.items()}
 
         input_output_loss = nn.L1Loss()
-        # criterion = nn.BCEWithLogitsLoss()
+        bce_with_logits_loss = nn.BCEWithLogitsLoss()
         mse_loss = nn.MSELoss()
 
         nrow = round((2 * batch_size)**0.5)
@@ -288,40 +288,39 @@ class CAAE(object):
                     d_z_prior_logits = self.Dz(z_prior)
                     d_z_logits = self.Dz(z)
 
-                    dz_loss_prior = - d_z_prior_logits.mean()
-                    dz_loss_z = d_z_logits.mean()
-                    ######################## DiscriminatorZ gradient penalty ##########################
-                    # Calculate interpolation
-                    alpha_z = torch.rand(z.shape[0], 1, device=self.device)
+                    dz_loss_prior = bce_with_logits_loss(d_z_prior_logits, torch.ones_like(d_z_prior_logits))
+                    dz_loss_z = bce_with_logits_loss(d_z_logits, torch.zeros_like(d_z_logits))
+                    # ######################## DiscriminatorZ gradient penalty ##########################
+                    # # Calculate interpolation
+                    # alpha_z = torch.rand(z.shape[0], 1, device=self.device)
 
-                    # alpha_z = alpha_z.expand_as(z)
-                    z_inter = alpha_z * z_prior.detach() + (1 - alpha_z) * z.detach()
-                    z_inter.requires_grad = True
+                    # # alpha_z = alpha_z.expand_as(z)
+                    # z_inter = alpha_z * z_prior.detach() + (1 - alpha_z) * z.detach()
+                    # z_inter.requires_grad = True
 
-                    # Calculate probability of interpolated examples
-                    prob_z_inter = self.Dz(z_inter)
+                    # # Calculate probability of interpolated examples
+                    # prob_z_inter = self.Dz(z_inter)
 
-                    # Calculate gradients of probabilities with respect to examples
-                    dz_gradients = grad(outputs=prob_z_inter, inputs=z_inter,
-                                        grad_outputs=torch.ones(prob_z_inter.size(), device=self.device),
-                                        create_graph=True, retain_graph=True)[0]
+                    # # Calculate gradients of probabilities with respect to examples
+                    # dz_gradients = grad(outputs=prob_z_inter, inputs=z_inter,
+                    #                     grad_outputs=torch.ones(prob_z_inter.size(), device=self.device),
+                    #                     create_graph=True, retain_graph=True)[0]
 
-                    # Gradients have shape (batch_size, z_length),
-                    # so flatten to easily take norm per example in batch
-                    # dz_gradients = dz_gradients.view(self.batch_size, -1)
-                    losses['dz_gn'].append(dz_gradients.norm(2, dim=1).mean().item())
+                    # # Gradients have shape (batch_size, z_length),
+                    # # so flatten to easily take norm per example in batch
+                    # # dz_gradients = dz_gradients.view(self.batch_size, -1)
+                    # losses['dz_gn'].append(dz_gradients.norm(2, dim=1).mean().item())
 
-                    # Derivatives of the gradient close to 0 can cause problems because of
-                    # the square root, so manually calculate norm and add epsilon
-                    dz_gradients_norm = torch.sqrt(torch.sum(dz_gradients ** 2, dim=1) + 1e-12)
+                    # # Derivatives of the gradient close to 0 can cause problems because of
+                    # # the square root, so manually calculate norm and add epsilon
+                    # dz_gradients_norm = torch.sqrt(torch.sum(dz_gradients ** 2, dim=1) + 1e-12)
 
-                    # Return gradient penalty
-                    dz_gp = loss_weight['dz_gp'] * ((dz_gradients_norm - 1) ** 2).mean()
-                    ##################################################################################
-                    dz_loss_tot = dz_loss_z + dz_loss_prior + dz_gp
+                    # # Return gradient penalty
+                    # dz_gp = loss_weight['dz_gp'] * ((dz_gradients_norm - 1) ** 2).mean()
+                    # ##################################################################################
+                    dz_loss_tot = dz_loss_z + dz_loss_prior
                     losses['dz_r'].append(dz_loss_prior.item())
                     losses['dz_f'].append(dz_loss_z.item())
-                    losses['dz_gp'].append(dz_gp.item())
                     losses['dz'].append(dz_loss_tot.item())
 
                     # Encoder\DiscriminatorZ Loss
