@@ -324,8 +324,8 @@ class CAAE(object):
                     losses['dz'].append(dz_loss_tot.item())
 
                     # Encoder\DiscriminatorZ Loss
-                    ez_loss = - d_z_logits.mean()
-                    losses['ed'].append(ez_loss.item())
+                    ed_loss = bce_with_logits_loss(d_z_logits, torch.ones_like(d_z_prior_logits))
+                    losses['ed'].append(ed_loss.item())
 
                     # DiscriminatorImg Loss
                     d_i_input_logits = self.Dimg(images, labels, self.device)
@@ -377,7 +377,7 @@ class CAAE(object):
 
                     # Back prop on Encoder\Generator
                     self.eg_optimizer.zero_grad()
-                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ez_loss + loss_weight['gd'] * gd_loss
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ed'] * ed_loss + loss_weight['gd'] * gd_loss
                     loss.backward(retain_graph=True)
                     self.eg_optimizer.step()
 
