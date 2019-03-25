@@ -133,11 +133,11 @@ class DiscriminatorZ(nn.Module):
 class DiscriminatorImg(nn.Module):
     """
     DiscriminatorImg Dimg
-    conv_1: 3 * 128 * 128 -> 16 * 64 * 64 BatchNorm + relu
+    conv_1: 3 * 128 * 128 -> 16 * 64 * 64 LayerNorm + relu
     catenate conv_1(img) and labels -> (16 + 20) * 64 * 64
-    conv_1: (16 + 20) * 64 * 64 -> 32 * 32 * 32 BatchNorm + relu
-    conv_1: 32 * 32 * 32 -> 64 * 16 * 16 BatchNorm + relu
-    conv_1: 64 * 16 * 16 -> 128 * 8 * 8 BatchNorm + relu
+    conv_2: (16 + 20) * 64 * 64 -> 32 * 32 * 32 LayerNorm + relu
+    conv_3: 32 * 32 * 32 -> 64 * 16 * 16 LayerNorm + relu
+    conv_4: 64 * 16 * 16 -> 128 * 8 * 8 LayerNorm + relu
     fc_1: 128 * 8 * 8 -> 1024 relu
     fc_2: 1024 -> 1
     """
@@ -146,22 +146,22 @@ class DiscriminatorImg(nn.Module):
         self.relu = nn.LeakyReLU()
         self.conv_1 = nn.Sequential(
             nn.Conv2d(3, 16, 2, 2),
-            nn.LayerNorm(16),
+            nn.LayerNorm((16, 64, 64)),
             self.relu   # should add () ???
         )
         self.conv_2 = nn.Sequential(
             nn.Conv2d(16 + hp.LENGTH_L, 32, 2, 2),
-            nn.LayerNorm(32),
+            nn.LayerNorm((32, 32, 32)),
             self.relu   
         )
         self.conv_3 = nn.Sequential(
             nn.Conv2d(32, 64, 2, 2),
-            nn.LayerNorm(64),
+            nn.LayerNorm((64, 16, 16)),
             self.relu   
         )
         self.conv_4 = nn.Sequential(
             nn.Conv2d(64, 128, 2, 2),
-            nn.LayerNorm(128),
+            nn.LayerNorm((128, 8, 8)),
             self.relu   
         )
         self.fc_1 = nn.Linear(128 * 8 * 8, 1024)
