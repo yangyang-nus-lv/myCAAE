@@ -293,7 +293,7 @@ class CAAE(object):
                     ########### DiscriminatorZ gradient penalty ##############
                     # Calculate interpolation
                     alpha_z = torch.rand(batch_size, 1, device=self.device)
-                    alpha_z = alpha_z.expand_as(z)
+                    # alpha_z = alpha_z.expand_as(z)
                     z_inter = alpha_z * z_prior.detach() + (1 - alpha_z) * z.detach()
                     z_inter.requires_grad = True
 
@@ -337,7 +337,7 @@ class CAAE(object):
                     # di_gp = self._di_gradient_penalty(images, generated, labels)
                     # Calculate interpolation
                     alpha_i = torch.rand(batch_size, 1, 1, 1, device=self.device)
-                    alpha_i = alpha_i.expand_as(images)
+                    # alpha_i = alpha_i.expand_as(images)
                     interpolated = alpha_i * images.detach() + (1 - alpha_i) * generated.detach()
                     interpolated.requires_grad = True
 
