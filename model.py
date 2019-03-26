@@ -250,7 +250,7 @@ class CAAE(object):
         paths_for_gif = []
 
         loss_history = []
-        loss_writer = SummaryWriter(comment=loadfrom100)
+        loss_writer = SummaryWriter(comment='m25')
         for epoch in range(1, epochs + 1):
             save_path_epoch = os.path.join(save_path, "epoch" + str(epoch))
             try:
