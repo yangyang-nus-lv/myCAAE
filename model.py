@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from torch.autograd import grad
 
 import logging
+from tensorboardX import SummaryWriter
 import random
 from collections import OrderedDict
 import cv2
@@ -14,6 +15,7 @@ from PIL import Image
 
 import hyperParams as hp
 from utils import *
+
 
 class Encoder(nn.Module):
     """
@@ -247,8 +249,8 @@ class CAAE(object):
         save_count = 0
         paths_for_gif = []
 
-        
-
+        loss_history = []
+        loss_writer = SummaryWriter(comment=loadfrom100)
         for epoch in range(1, epochs + 1):
             save_path_epoch = os.path.join(save_path, "epoch" + str(epoch))
             try:
@@ -274,7 +276,7 @@ class CAAE(object):
                     generated = self.G(z_l)
                     eg_loss = input_output_loss(generated, images) 
                     losses['eg'].append(eg_loss.item())
-
+                    # loss_writer.add_scalar('eg', eg_loss.item(), epoch)
                     # total variation to smooth the generated image
                     tv_loss = (
                         mse_loss(generated[:, :, :, :-1], generated[:, :, :, 1:]) +\
@@ -282,6 +284,7 @@ class CAAE(object):
                     )
                     tv_loss.to(self.device)
                     losses['tv'].append(tv_loss.item())
+                    # loss_writer.add_scalar('tv', tv_loss.item(), epoch)
 
                     # DiscriminatorZ Loss
                     z_prior = (torch.rand_like(z, device=self.device) - 0.5) * 2 # [-1 : 1]
@@ -322,9 +325,10 @@ class CAAE(object):
                     losses['dz_r'].append(dz_loss_prior.item())
                     losses['dz_f'].append(dz_loss_z.item())
                     losses['dz'].append(dz_loss_tot.item())
+                    loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item()}, epoch)
 
                     # Encoder\DiscriminatorZ Loss
-                    ed_loss = bce_with_logits_loss(d_z_logits, torch.ones_like(d_z_prior_logits))
+                    ed_loss = bce_with_logits_loss(d_z_logits, torch.ones_like(d_z_logits))
                     losses['ed'].append(ed_loss.item())
 
                     # DiscriminatorImg Loss
@@ -368,16 +372,22 @@ class CAAE(object):
                     losses['di_gp'].append(di_gp.item())
                     losses['di'].append(di_loss_tot.item())
 
+                    loss_writer.add_scalars('di_gp', {'di_gn': di_gradients.norm(2, dim=1).mean().item(), 
+                                                    'di_gp': di_gp.item()}, epoch)
+                    loss_writer.add_scalars('di', {'di_r': di_input_loss.item(), 'di_f': di_output_loss.item(), 'di': di_loss_tot.item()}, epoch)
                     # Generator\DiscriminatorImg Loss
                     gd_loss = - d_i_output_logits.mean()
                     losses['gd'].append(gd_loss.item())
+                    
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ed'] * ed_loss + loss_weight['gd'] * gd_loss
+                    
+                    loss_writer.add_scalars('eg', {'tr': loss.item(), 'eg': eg_loss.item(), 'tv': tv_loss.item(), 'ed': ed_loss.item(), 'gd': gd_loss.item()}, epoch)
                     # ************************************* loss functions end *******************************************************
 
                     # Start back propagation
 
                     # Back prop on Encoder\Generator
                     self.eg_optimizer.zero_grad()
-                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ed'] * ed_loss + loss_weight['gd'] * gd_loss
                     loss.backward(retain_graph=True)
                     self.eg_optimizer.step()
 
@@ -393,7 +403,7 @@ class CAAE(object):
 
                     now = datetime.datetime.now()
 
-                logging.info('[{h}:{m}[Epoch {e}] Loss: {t}'.format(h=now.hour, m=now.minute, e=epoch, t=loss.item()))
+                logging.info('[{h}:{m}] [Epoch {e}] Loss: {t}'.format(h=now.hour, m=now.minute, e=epoch, t=loss.item()))
                 print_timestamp(f"[Epoch {epoch:d}] Loss: {loss.item():f}")
 
                 to_save_models = models_saving in ('always', 'tail')
@@ -439,8 +449,9 @@ class CAAE(object):
 
                 loss_tracker.append_many(**{k: mean(v) for k, v in losses.items()})
                 loss_tracker.plot()
-
-                logging.info('[{h}:{m}[Epoch {e}] Loss: {l}'.format(h=now.hour, m=now.minute, e=epoch, l=repr(loss_tracker)))
+                loss_writer.add_scalars('tr_va', {'train': loss.item(), 'valid': validate_loss.item()}, epoch)
+                logging.info('[{h}:{m}] [Epoch {e}] Loss: {l}'.format(h=now.hour, m=now.minute, e=epoch, l=repr(loss_tracker)))
+                loss_history.append(losses)
 
             except KeyboardInterrupt:
                 print_timestamp("{br}CTRL+C detected, saving model{br}".format(br=os.linesep))
@@ -455,7 +466,11 @@ class CAAE(object):
         if models_saving == 'last':
             cp_path = self.save(save_path_epoch, to_save_models=True)
         loss_tracker.plot()
-        
+
+        with open('loss_history.txt', 'w') as f:
+            for item in loss_history:
+                f.write("%s\n" % item)
+
     def test_single(self, image_tensor, age, gender, target, save_test=True):
         """
             test single image

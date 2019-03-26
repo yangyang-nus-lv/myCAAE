@@ -210,7 +210,7 @@ class LossTracker(object):
         print("in plot")
         plt.clf()
         graphs = [plt.plot(loss, label=name)[0] for name, loss in self.losses.items()]
-        plt.ylim((-1, 4))
+        # plt.ylim((-1, 4))
         plt.legend(handles=graphs)
         plt.xlabel('Epochs')
         plt.ylabel('Averaged loss')
