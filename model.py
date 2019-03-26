@@ -200,7 +200,7 @@ class CAAE(object):
         self.dz_optimizer = Adam(self.Dz.parameters())
         self.di_optimizer = Adam(self.Dimg.parameters())
 
-        self.device = None
+        self.device = 'cuda:1'
 
     def __call__(self, *args, **kwargs):
         self.test_single(*args, **kwargs)
