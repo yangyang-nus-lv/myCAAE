@@ -44,6 +44,7 @@ def loss_weights(epoch):
                     'ed': 0.00001 * epoch,
                     'gd': 0.002 + 0.00006 * (epoch - 50),
                     'di_gp': 50 - 0.8 * (epoch - 50),}
+        return WEIGHT
     else:
         WEIGHT = {  'eg': 1,
                     'tv': 0.05,
