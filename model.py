@@ -460,8 +460,8 @@ class CAAE(object):
         self.device = torch.device('cpu')
 
     def cuda(self):
-        self._mass_fn('cuda')
-        self.device = torch.device('cuda')
+        self._mass_fn('cuda:3')
+        self.device = torch.device('cuda:3')
 
     def eval(self):
         """Move Net to evaluation mode.
