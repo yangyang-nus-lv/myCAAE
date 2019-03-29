@@ -247,7 +247,7 @@ class CAAE(object):
         save_count = 0
         paths_for_gif = []
 
-        loss_writer = SummaryWriter('caae_wl0')
+        loss_writer = SummaryWriter('/runs/caae_wl0')
         
         for epoch in range(1, epochs + 1):
             save_path_epoch = os.path.join(save_path, "epoch" + str(epoch))
