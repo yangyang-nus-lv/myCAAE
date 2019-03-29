@@ -244,13 +244,13 @@ class CAAE(object):
                 if val:
                     optimizer.param_groups[0][param] = val
 
-        loss_tracker = LossTracker(plot=should_plot)
+        # loss_tracker = LossTracker(plot=should_plot)
         save_path_epoch = ""
-        save_count = 0
+        # save_count = 0
         paths_for_gif = []
 
         loss_history = []
-        loss_writer = SummaryWriter(comment='m28')
+        loss_writer = SummaryWriter('wgan_wl1')
 
         for epoch in range(1, epochs + 1):
             save_path_epoch = os.path.join(save_path, "epoch" + str(epoch))
@@ -260,7 +260,7 @@ class CAAE(object):
                 paths_for_gif.append(save_path_epoch)
 
                 # ************************************* loss functions *******************************************************
-                losses = defaultdict(lambda: [])
+                # losses = defaultdict(lambda: [])
                 self.training_mode()  # move to train mode
 
                 loss_weight = hp.loss_weights(epoch)
@@ -276,7 +276,7 @@ class CAAE(object):
                     z_l = torch.cat((z, labels), 1)
                     generated = self.G(z_l)
                     eg_loss = input_output_loss(generated, images) 
-                    losses['eg'].append(eg_loss.item())
+                    # losses['eg'].append(eg_loss.item())
                     # loss_writer.add_scalar('eg', eg_loss.item(), epoch)
                     # total variation to smooth the generated image
                     tv_loss = (
@@ -284,7 +284,7 @@ class CAAE(object):
                         mse_loss(generated[:, :, :-1, :], generated[:, :, 1:, :])
                     )
                     tv_loss.to(self.device)
-                    losses['tv'].append(tv_loss.item())
+                    # losses['tv'].append(tv_loss.item())
                     # loss_writer.add_scalar('tv', tv_loss.item(), epoch)
 
                     # DiscriminatorZ Loss
@@ -323,15 +323,15 @@ class CAAE(object):
                     # dz_gp = loss_weight['dz_gp'] * ((dz_gradients_norm - 1) ** 2).mean()
                     # ##################################################################################
                     dz_loss_tot = dz_loss_z + dz_loss_prior
-                    losses['dz_r'].append(dz_loss_prior.item())
-                    losses['dz_f'].append(dz_loss_z.item())
-                    losses['dz'].append(dz_loss_tot.item())
-                    loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item()}, epoch)
+                    # losses['dz_r'].append(dz_loss_prior.item())
+                    # losses['dz_f'].append(dz_loss_z.item())
+                    # losses['dz'].append(dz_loss_tot.item())
+                    
 
                     # Encoder\DiscriminatorZ Loss
                     ed_loss = bce_with_logits_loss(d_z_logits, torch.ones_like(d_z_logits))
-                    losses['ed'].append(ed_loss.item())
-
+                    # losses['ed'].append(ed_loss.item())
+                    loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item(), 'ed': ed_loss.item()}, epoch)
                     # DiscriminatorImg Loss
                     d_i_input_logits = self.Dimg(images, labels, self.device)
                     d_i_output_logits = self.Dimg(generated, labels, self.device)
@@ -357,7 +357,7 @@ class CAAE(object):
                     # Gradients have shape (batch_size, num_channels, img_width, img_height),
                     # so flatten to easily take norm per example in batch
                     di_gradients = di_gradients.view(batch_size, -1)
-                    losses['di_gn'].append(di_gradients.norm(2, dim=1).mean().item())
+                    # losses['di_gn'].append(di_gradients.norm(2, dim=1).mean().item())
 
                     # Derivatives of the gradient close to 0 can cause problems because of
                     # the square root, so manually calculate norm and add epsilon
@@ -368,21 +368,22 @@ class CAAE(object):
                     ###################################################################################
                     di_loss_tot = di_input_loss + di_output_loss + di_gp
                     
-                    losses['di_r'].append(di_input_loss.item())
-                    losses['di_f'].append(di_output_loss.item())
-                    losses['di_gp'].append(di_gp.item())
-                    losses['di'].append(di_loss_tot.item())
+                    # losses['di_r'].append(di_input_loss.item())
+                    # losses['di_f'].append(di_output_loss.item())
+                    # losses['di_gp'].append(di_gp.item())
+                    # losses['di'].append(di_loss_tot.item())
 
                     loss_writer.add_scalars('di_gp', {'di_gn': di_gradients.norm(2, dim=1).mean().item(), 
                                                     'di_gp': di_gp.item()}, epoch)
-                    loss_writer.add_scalars('di', {'di_r': di_input_loss.item(), 'di_f': di_output_loss.item(), 'di': di_loss_tot.item()}, epoch)
+                    
                     # Generator\DiscriminatorImg Loss
                     gd_loss = - d_i_output_logits.mean()
-                    losses['gd'].append(gd_loss.item())
-                    
+                    # losses['gd'].append(gd_loss.item())
+                    loss_writer.add_scalars('di', {'di_r': di_input_loss.item(), 'di_f': di_output_loss.item(), 'di': di_loss_tot.item(), 'gd': gd_loss.item()}, epoch)
+
                     loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ed'] * ed_loss + loss_weight['gd'] * gd_loss
                     
-                    loss_writer.add_scalars('eg', {'tr': loss.item(), 'eg': eg_loss.item(), 'tv': tv_loss.item(), 'ed': ed_loss.item(), 'gd': gd_loss.item()}, epoch)
+                    loss_writer.add_scalars('eg', {'tot': loss.item(), 'eg': eg_loss.item(), 'tv': tv_loss.item()}, epoch)
                     # ************************************* loss functions end *******************************************************
 
                     # Start back propagation
@@ -412,7 +413,7 @@ class CAAE(object):
                 if models_saving == 'tail':
                     prev_folder = os.path.join(save_path, "epoch" + str(epoch - 1))
                     remove_trained(prev_folder)
-                loss_tracker.save(os.path.join(cp_path, 'losses.png'))
+                # loss_tracker.save(os.path.join(cp_path, 'losses.png'))
 
                 with torch.no_grad():  # validation
                     self.eval()  # move to eval mode
@@ -444,15 +445,15 @@ class CAAE(object):
                         test_file_name = os.path.join(save_path_epoch, 'test.png')
                         save_image_normalized(tensor=test_joined, filename=test_file_name, nrow=11)
 
-                        losses['valid'].append(validate_loss.item())
+                        # losses['valid'].append(validate_loss.item())
                         break
 
 
-                loss_tracker.append_many(**{k: mean(v) for k, v in losses.items()})
-                loss_tracker.plot()
-                loss_writer.add_scalars('tr_va', {'train': loss.item(), 'valid': validate_loss.item()}, epoch)
-                logging.info('[{h}:{m}] [Epoch {e}] Loss: {l}'.format(h=now.hour, m=now.minute, e=epoch, l=repr(loss_tracker)))
-                loss_history.append(losses)
+                # loss_tracker.append_many(**{k: mean(v) for k, v in losses.items()})
+                # loss_tracker.plot()
+                loss_writer.add_scalars('tr_va', {'train': eg_loss.item(), 'valid': validate_loss.item()}, epoch)
+                # logging.info('[{h}:{m}] [Epoch {e}] Loss: {l}'.format(h=now.hour, m=now.minute, e=epoch, l=repr(loss_tracker)))
+                # loss_history.append(losses)
 
             except KeyboardInterrupt:
                 print_timestamp("{br}CTRL+C detected, saving model{br}".format(br=os.linesep))
@@ -461,12 +462,12 @@ class CAAE(object):
                 if models_saving == 'tail':
                     prev_folder = os.path.join(save_path, "epoch" + str(epoch - 1))
                     remove_trained(prev_folder)
-                loss_tracker.save(os.path.join(cp_path, 'losses.png'))
+                # loss_tracker.save(os.path.join(cp_path, 'losses.png'))
                 raise
 
         if models_saving == 'last':
             cp_path = self.save(save_path_epoch, to_save_models=True)
-        loss_tracker.plot()
+        # loss_tracker.plot()
 
         with open('loss_history.txt', 'w') as f:
             for item in loss_history:
