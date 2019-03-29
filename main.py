@@ -15,7 +15,7 @@ import gc
 import torch
 
 gc.collect()
-os.environ["CUDA_VISIBLE_DEVICE"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 assert sys.version_info >= (3, 6),\
     "This script requires Python >= 3.6"  # TODO 3.7?
