@@ -294,7 +294,7 @@ class CAAE(object):
                     losses['dz_r'].append(dz_loss_prior.item())
                     losses['dz_f'].append(dz_loss_z.item())
                     losses['dz'].append(dz_loss_tot.item())
-                    loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item()}, epoch
+                    loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item()}, epoch)
                     # Encoder\DiscriminatorZ Loss
                     ed_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
                     ed_loss.to(self.device)
@@ -317,7 +317,7 @@ class CAAE(object):
                     gd_loss = criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
                     losses['gd'].append(gd_loss.item())
 
-                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ez_loss + loss_weight['gd'] * gd_loss
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ed_loss + loss_weight['gd'] * gd_loss
                     loss_writer.add_scalars('eg', {'tr': loss.item(), 'eg': eg_loss.item(), 'tv': tv_loss.item(), 'ed': ed_loss.item(), 'gd': gd_loss.item()}, epoch)
                     # ************************************* loss functions end *******************************************************
 
