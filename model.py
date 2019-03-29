@@ -10,6 +10,7 @@ from collections import OrderedDict
 import cv2
 import imageio
 from PIL import Image
+from tensorboardX import SummaryWriter
 
 import hyperParams as hp
 from utils import *
@@ -246,8 +247,8 @@ class CAAE(object):
         save_count = 0
         paths_for_gif = []
 
+        loss_writer = SummaryWriter(comment='caae')
         
-
         for epoch in range(1, epochs + 1):
             save_path_epoch = os.path.join(save_path, "epoch" + str(epoch))
             try:
@@ -293,11 +294,11 @@ class CAAE(object):
                     losses['dz_r'].append(dz_loss_prior.item())
                     losses['dz_f'].append(dz_loss_z.item())
                     losses['dz'].append(dz_loss_tot.item())
-
+                    loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item()}, epoch
                     # Encoder\DiscriminatorZ Loss
-                    ez_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
-                    ez_loss.to(self.device)
-                    losses['ed'].append(ez_loss.item())
+                    ed_loss = criterion(d_z_logits, torch.ones_like(d_z_logits))
+                    ed_loss.to(self.device)
+                    losses['ed'].append(ed_loss.item())
 
                     # DiscriminatorImg Loss
                     d_i_input_logits = self.Dimg(images, labels, self.device)
@@ -309,17 +310,21 @@ class CAAE(object):
                     losses['di_r'].append(di_input_loss.item())
                     losses['di_f'].append(di_output_loss.item())
                     losses['di'].append(di_loss_tot.item())
+                    
+                    loss_writer.add_scalars('di', {'di_r': di_input_loss.item(), 'di_f': di_output_loss.item(), 'di': di_loss_tot.item()}, epoch)
 
                     # Generator\DiscriminatorImg Loss
                     gd_loss = criterion(d_i_output_logits, torch.ones_like(d_i_output_logits))
                     losses['gd'].append(gd_loss.item())
+
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ez_loss + loss_weight['gd'] * gd_loss
+                    loss_writer.add_scalars('eg', {'tr': loss.item(), 'eg': eg_loss.item(), 'tv': tv_loss.item(), 'ed': ed_loss.item(), 'gd': gd_loss.item()}, epoch)
                     # ************************************* loss functions end *******************************************************
 
                     # Start back propagation
 
                     # Back prop on Encoder\Generator
                     self.eg_optimizer.zero_grad()
-                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ez'] * ez_loss + loss_weight['gd'] * gd_loss
                     loss.backward(retain_graph=True)
                     self.eg_optimizer.step()
 
@@ -335,7 +340,7 @@ class CAAE(object):
 
                     now = datetime.datetime.now()
 
-                logging.info('[{h}:{m}[Epoch {e}] Loss: {t}'.format(h=now.hour, m=now.minute, e=epoch, t=loss.item()))
+                logging.info('[{h}:{m}] [Epoch {e}] Loss: {t}'.format(h=now.hour, m=now.minute, e=epoch, t=loss.item()))
                 print_timestamp(f"[Epoch {epoch:d}] Loss: {loss.item():f}")
 
                 to_save_models = models_saving in ('always', 'tail')
@@ -381,9 +386,9 @@ class CAAE(object):
 
                 loss_tracker.append_many(**{k: mean(v) for k, v in losses.items()})
                 loss_tracker.plot()
-
-                logging.info('[{h}:{m}[Epoch {e}] Loss: {l}'.format(h=now.hour, m=now.minute, e=epoch, l=repr(loss_tracker)))
-
+                
+                logging.info('[{h}:{m}] [Epoch {e}] Loss: {l}'.format(h=now.hour, m=now.minute, e=epoch, l=repr(loss_tracker)))
+                loss_writer.add_scalars('tr_va', {'train': eg_loss.item(), 'valid': validate_loss.item()}, epoch)
             except KeyboardInterrupt:
                 print_timestamp("{br}CTRL+C detected, saving model{br}".format(br=os.linesep))
                 if models_saving != 'never':

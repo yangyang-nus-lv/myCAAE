@@ -225,7 +225,7 @@ class LossTracker(object):
 
     @staticmethod
     def save(path):
-        plt.savefig(path, transparent=True)
+        plt.savefig(path, transparent=True, dpi=300)
 
     def __repr__(self):
         ret = {}

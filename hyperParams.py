@@ -41,8 +41,8 @@ def loss_weights(epoch):
     else:
         WEIGHT = {  'eg': 1,
                     'tv': 0.05,
-                    'ez': 0.001 + 0.000005 * (epoch - 100),
-                    'gd': 0.002 + 0.000005 * (epoch - 100), }
+                    'ez': 0.001 + 0.00001 * (epoch - 100),
+                    'gd': 0.002 + 0.00003 * (epoch - 100), }
         return WEIGHT
         
 MALE = 0
