@@ -117,11 +117,11 @@ class DiscriminatorZ(nn.Module):
         super(DiscriminatorZ, self).__init__()
         self.relu = nn.LeakyReLU()
         self.fc_1 = nn.Sequential(nn.Linear(hp.LENGTH_Z, hp.NUM_ENCODER_CHANNELS), 
-                                nn.InstanceNorm1d(hp.NUM_ENCODER_CHANNELS))
+                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS))
         self.fc_2 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS, hp.NUM_ENCODER_CHANNELS // 2),
-                                nn.InstanceNorm1d(hp.NUM_ENCODER_CHANNELS // 2))
+                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 2))
         self.fc_3 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS // 2, hp.NUM_ENCODER_CHANNELS // 4),
-                                nn.InstanceNorm1d(hp.NUM_ENCODER_CHANNELS // 4))
+                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 4))
         self.fc_4 = nn.Linear(hp.NUM_ENCODER_CHANNELS // 4, 1)
 
     def forward(self, z):
