@@ -233,7 +233,7 @@ class CAAE(object):
         idx_to_class = {v: k for k, v in dataset.class_to_idx.items()}
 
         input_output_loss = nn.L1Loss()
-        bce_with_logits_loss = nn.BCEWithLogitsLoss()
+        # bce_with_logits_loss = nn.BCEWithLogitsLoss()
         mse_loss = nn.MSELoss()
 
         nrow = round((2 * batch_size)**0.5)
@@ -250,7 +250,7 @@ class CAAE(object):
         paths_for_gif = []
 
         loss_history = []
-        loss_writer = SummaryWriter('wgan_wl1')
+        loss_writer = SummaryWriter('run/wgan_nodz_wl1')
 
         for epoch in range(1, epochs + 1):
             save_path_epoch = os.path.join(save_path, "epoch" + str(epoch))
