@@ -104,33 +104,33 @@ class Generator(nn.Module):
 
         return z
 
-class DiscriminatorZ(nn.Module):
-    """
-    DiscriminatorZ Dz
-    Input: (50 + 10 + 10)
-    fc_1: 70 -> 64
-    fc_2: 64 -> 32
-    fc_3: 32 -> 16
-    fc_4: 16 -> 1
-    """
-    def __init__(self):
-        super(DiscriminatorZ, self).__init__()
-        self.relu = nn.LeakyReLU()
-        self.fc_1 = nn.Sequential(nn.Linear(hp.LENGTH_Z, hp.NUM_ENCODER_CHANNELS), 
-                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS))
-        self.fc_2 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS, hp.NUM_ENCODER_CHANNELS // 2),
-                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 2))
-        self.fc_3 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS // 2, hp.NUM_ENCODER_CHANNELS // 4),
-                                nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 4))
-        self.fc_4 = nn.Linear(hp.NUM_ENCODER_CHANNELS // 4, 1)
+# class DiscriminatorZ(nn.Module):
+#     """
+#     DiscriminatorZ Dz
+#     Input: (50 + 10 + 10)
+#     fc_1: 70 -> 64
+#     fc_2: 64 -> 32
+#     fc_3: 32 -> 16
+#     fc_4: 16 -> 1
+#     """
+#     def __init__(self):
+#         super(DiscriminatorZ, self).__init__()
+#         self.relu = nn.LeakyReLU()
+#         self.fc_1 = nn.Sequential(nn.Linear(hp.LENGTH_Z, hp.NUM_ENCODER_CHANNELS), 
+#                                 nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS))
+#         self.fc_2 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS, hp.NUM_ENCODER_CHANNELS // 2),
+#                                 nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 2))
+#         self.fc_3 = nn.Sequential(nn.Linear(hp.NUM_ENCODER_CHANNELS // 2, hp.NUM_ENCODER_CHANNELS // 4),
+#                                 nn.BatchNorm1d(hp.NUM_ENCODER_CHANNELS // 4))
+#         self.fc_4 = nn.Linear(hp.NUM_ENCODER_CHANNELS // 4, 1)
 
-    def forward(self, z):
-        z = self.relu(self.fc_1(z))
-        z = self.relu(self.fc_2(z))
-        z = self.relu(self.fc_3(z))
-        z = self.fc_4(z)
+#     def forward(self, z):
+#         z = self.relu(self.fc_1(z))
+#         z = self.relu(self.fc_2(z))
+#         z = self.relu(self.fc_3(z))
+#         z = self.fc_4(z)
 
-        return z
+#         return z
 
 class DiscriminatorImg(nn.Module):
     """
@@ -192,12 +192,12 @@ class DiscriminatorImg(nn.Module):
 class CAAE(object):
     def __init__(self):
         self.E = Encoder()
-        self.Dz = DiscriminatorZ()
+        # self.Dz = DiscriminatorZ()
         self.Dimg = DiscriminatorImg()
         self.G = Generator()
 
         self.eg_optimizer = Adam(list(self.E.parameters()) + list(self.G.parameters()))
-        self.dz_optimizer = Adam(self.Dz.parameters())
+        # self.dz_optimizer = Adam(self.Dz.parameters())
         self.di_optimizer = Adam(self.Dimg.parameters())
 
         self.device = None
@@ -206,7 +206,7 @@ class CAAE(object):
         self.test_single(*args, **kwargs)
 
     def __repr__(self):
-        return os.linesep.join([repr(subnet) for subnet in (self.E, self.Dz, self.G)])
+        return os.linesep.join([repr(subnet) for subnet in (self.E, self.G)]) # , self.Dz
         
     def train(
             self,
@@ -238,7 +238,7 @@ class CAAE(object):
 
         nrow = round((2 * batch_size)**0.5)
 
-        for optimizer in (self.eg_optimizer, self.dz_optimizer, self.di_optimizer):
+        for optimizer in (self.eg_optimizer, self.di_optimizer): # , self.dz_optimizer
             for param in ('weight_decay', 'betas', 'lr'):
                 val = locals()[param]
                 if val:
@@ -287,13 +287,13 @@ class CAAE(object):
                     # losses['tv'].append(tv_loss.item())
                     # loss_writer.add_scalar('tv', tv_loss.item(), epoch)
 
-                    # DiscriminatorZ Loss
-                    z_prior = (torch.rand_like(z, device=self.device) - 0.5) * 2 # [-1 : 1]
-                    d_z_prior_logits = self.Dz(z_prior)
-                    d_z_logits = self.Dz(z)
+                    # # DiscriminatorZ Loss
+                    # z_prior = (torch.rand_like(z, device=self.device) - 0.5) * 2 # [-1 : 1]
+                    # d_z_prior_logits = self.Dz(z_prior)
+                    # d_z_logits = self.Dz(z)
 
-                    dz_loss_prior = bce_with_logits_loss(d_z_prior_logits, torch.ones_like(d_z_prior_logits))
-                    dz_loss_z = bce_with_logits_loss(d_z_logits, torch.zeros_like(d_z_logits))
+                    # dz_loss_prior = bce_with_logits_loss(d_z_prior_logits, torch.ones_like(d_z_prior_logits))
+                    # dz_loss_z = bce_with_logits_loss(d_z_logits, torch.zeros_like(d_z_logits))
                     # ######################## DiscriminatorZ gradient penalty ##########################
                     # # Calculate interpolation
                     # alpha_z = torch.rand(z.shape[0], 1, device=self.device)
@@ -322,16 +322,16 @@ class CAAE(object):
                     # # Return gradient penalty
                     # dz_gp = loss_weight['dz_gp'] * ((dz_gradients_norm - 1) ** 2).mean()
                     # ##################################################################################
-                    dz_loss_tot = dz_loss_z + dz_loss_prior
+                    # dz_loss_tot = dz_loss_z + dz_loss_prior
                     # losses['dz_r'].append(dz_loss_prior.item())
                     # losses['dz_f'].append(dz_loss_z.item())
                     # losses['dz'].append(dz_loss_tot.item())
                     
 
                     # Encoder\DiscriminatorZ Loss
-                    ed_loss = bce_with_logits_loss(d_z_logits, torch.ones_like(d_z_logits))
+                    # ed_loss = bce_with_logits_loss(d_z_logits, torch.ones_like(d_z_logits))
                     # losses['ed'].append(ed_loss.item())
-                    loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item(), 'ed': ed_loss.item()}, epoch)
+                    # loss_writer.add_scalars('dz', {'dz_r': dz_loss_prior.item(), 'dz_f': dz_loss_z.item(), 'dz': dz_loss_tot.item(), 'ed': ed_loss.item()}, epoch)
                     # DiscriminatorImg Loss
                     d_i_input_logits = self.Dimg(images, labels, self.device)
                     d_i_output_logits = self.Dimg(generated, labels, self.device)
@@ -393,10 +393,10 @@ class CAAE(object):
                     loss.backward(retain_graph=True)
                     self.eg_optimizer.step()
 
-                    # Back prop on DiscriminatorZ
-                    self.dz_optimizer.zero_grad()
-                    dz_loss_tot.backward(retain_graph=True)
-                    self.dz_optimizer.step()
+                    # # Back prop on DiscriminatorZ
+                    # self.dz_optimizer.zero_grad()
+                    # dz_loss_tot.backward(retain_graph=True)
+                    # self.dz_optimizer.step()
 
                     # Back prop on DiscriminatorImg
                     self.di_optimizer.zero_grad()

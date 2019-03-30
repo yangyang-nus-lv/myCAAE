@@ -36,14 +36,14 @@ def loss_weights(epoch):
                     'tv': 0.05,
                     'ed': 0.00001 * epoch,
                     'gd': 0.00002 * epoch,
-                    'di_gp': 10,}
+                    'di_gp': 30,}
         return WEIGHT
     else:
         WEIGHT = {  'eg': 1,
                     'tv': 0.05,
                     'ed': 0.0005,
                     'gd': 0.001,
-                    'di_gp': 10,}
+                    'di_gp': 30,}
         return WEIGHT
         
 MALE = 0
