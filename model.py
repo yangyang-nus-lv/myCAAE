@@ -381,7 +381,7 @@ class CAAE(object):
                     # losses['gd'].append(gd_loss.item())
                     loss_writer.add_scalars('di', {'di_r': di_input_loss.item(), 'di_f': di_output_loss.item(), 'di': di_loss_tot.item(), 'gd': gd_loss.item()}, epoch)
 
-                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['ed'] * ed_loss + loss_weight['gd'] * gd_loss
+                    loss = loss_weight['eg'] * eg_loss + loss_weight['tv'] * tv_loss + loss_weight['gd'] * gd_loss
                     
                     loss_writer.add_scalars('eg', {'tot': loss.item(), 'eg': eg_loss.item(), 'tv': tv_loss.item()}, epoch)
                     # ************************************* loss functions end *******************************************************
