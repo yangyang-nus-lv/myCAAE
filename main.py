@@ -15,7 +15,7 @@ import gc
 import torch
 
 gc.collect()
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 assert sys.version_info >= (3, 6),\
     "This script requires Python >= 3.6"  # TODO 3.7?
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         lr = args.learning_rate if not args.load else None
 
         if args.load:
-            net.load(args.load)
+            net.load(args.load, slim=False)
             print("Loading pre-trained models from {}".format(args.load))
 
         data_src = args.input or hp.UTKFACE_DEFAULT_PATH
