@@ -250,7 +250,7 @@ class CAAE(object):
         paths_for_gif = []
 
         loss_history = []
-        loss_writer = SummaryWriter('wgan_wl1')
+        loss_writer = SummaryWriter('runs/wgan_dznm_wl1')
 
         for epoch in range(1, epochs + 1):
             save_path_epoch = os.path.join(save_path, "epoch" + str(epoch))
@@ -288,7 +288,7 @@ class CAAE(object):
                     # loss_writer.add_scalar('tv', tv_loss.item(), epoch)
 
                     # DiscriminatorZ Loss
-                    z_prior = (torch.rand_like(z, device=self.device) - 0.5) * 2 # [-1 : 1]
+                    z_prior = torch.randn_like(z, device=self.device) / 2 # [-1 : 1]
                     d_z_prior_logits = self.Dz(z_prior)
                     d_z_logits = self.Dz(z)
 
