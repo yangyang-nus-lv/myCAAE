@@ -33,8 +33,8 @@ LENGTH_L = NUM_AGES + NUM_GENDERS_EXPANDED
 def loss_weights(epoch):
     WEIGHT = {  'eg': 1,
                 'tv': 0.05,
-                'ez': 0.0001,
-                'gd': 0.0001,
+                'ez': 0.001,
+                'gd': 0.01,
 		 }
     return WEIGHT
     # above wl0
