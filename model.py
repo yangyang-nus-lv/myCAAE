@@ -371,7 +371,11 @@ class CAAE(object):
                         for i in range(10):
                             test_image = val_images[i, :, :, :]
                             test_label = val_labels[i]
+                            print(test_image.shape)
+                            print(test_label.shape)
                             age, gender = idx_to_class_info(test_label)
+                            print(age)
+                            print(gender)
                             tested = self.test_single(test_image, age, gender, target=None, save_test=False)
                             if i == 0:
                                 test_joined = tested.clone().detach()
